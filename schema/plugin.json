@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "jupyter-ai-tutor",
+  "description": "jupyter-ai-tutor settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}

@@ -1,0 +1,19 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.6.0
+_src_path: https://github.com/jupyterlab/extension-template
+advanced: false
+author_email: ''
+author_name: Jupyter Development Team
+create_claude_symlink: true
+create_gemini_symlink: true
+has_ai_rules: true
+has_binder: true
+has_settings: true
+kind: frontend
+labextension_name: jupyter-ai-tutor
+project_short_description: A JupyterLab extension to add an AI-powered tutor assistant
+    to Notebooks.
+python_name: jupyter_ai_tutor
+repository: https://github.com/QuantStack/jupyter-ai-tutor
+test: true
+
