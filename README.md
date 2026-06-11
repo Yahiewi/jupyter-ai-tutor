@@ -3,7 +3,6 @@
 [![Github Actions Status](https://github.com/QuantStack/jupyter-ai-tutor/workflows/Build/badge.svg)](https://github.com/QuantStack/jupyter-ai-tutor/actions/workflows/build.yml)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/QuantStack/jupyter-ai-tutor/main?urlpath=lab)
 
-
 A JupyterLab extension to add an AI-powered tutor assistant to Notebooks.
 
 ## Requirements
