@@ -17,8 +17,6 @@ interface ITutorNewMessage extends INewMessage {
   description?: string;
   studentContext?: string;
   studentAnswer?: string;
-  referenceSolution?: string;
-  evaluationCriteria?: string;
 }
 
 export const TUTOR_USER: IUser = {
@@ -96,9 +94,7 @@ export class TutorChatModel extends AbstractChatModel {
         description: message.description,
         signal: this._abortController.signal,
         studentContext: message.studentContext,
-        studentAnswer: message.studentAnswer,
-        referenceSolution: message.referenceSolution,
-        evaluationCriteria: message.evaluationCriteria
+        studentAnswer: message.studentAnswer
       })) {
         accumulated += chunk;
         streamingMsg.update({ body: accumulated });

@@ -10,8 +10,6 @@ export interface IStreamExplanationOptions {
   signal?: AbortSignal;
   studentContext?: string;
   studentAnswer?: string;
-  referenceSolution?: string;
-  evaluationCriteria?: string;
 }
 
 /**
@@ -33,9 +31,7 @@ export async function* streamExplanation(
         body: options.body,
         description: options.description,
         student_context: options.studentContext,
-        student_answer: options.studentAnswer,
-        reference_solution: options.referenceSolution,
-        evaluation_criteria: options.evaluationCriteria
+        student_answer: options.studentAnswer
       }),
       headers: { 'Content-Type': 'application/json' },
       signal: options.signal
