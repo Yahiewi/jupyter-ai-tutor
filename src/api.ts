@@ -2,15 +2,25 @@ import { URLExt } from '@jupyterlab/coreutils';
 import { ServerConnection } from '@jupyterlab/services';
 
 /**
+ * Options for streaming the explanation request.
+ */
+export interface IStreamExplanationOptions {
+  body: string;
+  description?: string;
+  signal?: AbortSignal;
+  studentContext?: string;
+  studentAnswer?: string;
+  referenceSolution?: string;
+  evaluationCriteria?: string;
+}
+
+/**
  * Streams the tutor explanation for the given message body via SSE.
  * Yields text chunks as they arrive from the backend.
- * @param body - The user message (code + question)
- * @param description - Optional exercise description from preceding markdown cells
+ * @param options - The request options containing body and structured contexts
  */
 export async function* streamExplanation(
-  body: string,
-  description?: string,
-  signal?: AbortSignal
+  options: IStreamExplanationOptions
 ): AsyncGenerator<string, void, undefined> {
   const settings = ServerConnection.makeSettings();
   const url = URLExt.join(settings.baseUrl, 'api/jupyter-ai-tutor/explain');
@@ -19,9 +29,16 @@ export async function* streamExplanation(
     url,
     {
       method: 'POST',
-      body: JSON.stringify({ body, description }),
+      body: JSON.stringify({
+        body: options.body,
+        description: options.description,
+        student_context: options.studentContext,
+        student_answer: options.studentAnswer,
+        reference_solution: options.referenceSolution,
+        evaluation_criteria: options.evaluationCriteria
+      }),
       headers: { 'Content-Type': 'application/json' },
-      signal
+      signal: options.signal
     },
     settings
   );

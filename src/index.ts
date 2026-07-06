@@ -184,6 +184,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
         const codeModel = cell.model as ICodeCellModel;
         const outputs = codeModel.outputs;
         let errorSection = '';
+        let jsonError: {
+          ename: string;
+          evalue: string;
+          traceback: string[];
+        } | null = null;
 
         for (let i = 0; i < outputs.length; i++) {
           const output = outputs.get(i);
@@ -193,6 +198,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
               evalue: string;
               traceback: string[];
             };
+            jsonError = json;
             const traceback = json.traceback
               .map(line => line.replace(ANSI_ESCAPE, ''))
               .join('\n');
@@ -203,43 +209,70 @@ const plugin: JupyterFrontEndPlugin<void> = {
           }
         }
 
-        // Collect preceding markdown cells as exercise description context.
+        // Collect preceding cells context.
         const notebook = notebookTracker?.currentWidget?.content;
         const notebookPath = notebookTracker?.currentWidget?.context.path ?? '';
-        let description: string | undefined;
+        let studentContext = '';
         let attachment: INotebookAttachment | undefined;
 
         if (notebook) {
           const activeCellIndex = notebook.activeCellIndex;
-          const markdownCells: { id: string; source: string }[] = [];
+          let lastMdIdx = -1;
 
+          // Find the index of the most recent markdown cell above the active cell
           for (let i = activeCellIndex - 1; i >= 0; i--) {
             const precedingCell = notebook.widgets[i];
-            if (precedingCell.model.type === 'code') {
-              break;
-            }
             if (precedingCell.model.type === 'markdown') {
-              const mdSource = precedingCell.model.sharedModel.source.trim();
-              if (mdSource) {
-                markdownCells.unshift({
-                  id: precedingCell.model.id,
-                  source: mdSource
-                });
-              }
+              lastMdIdx = i;
+              break;
             }
           }
 
-          if (markdownCells.length > 0) {
-            description = markdownCells.map(c => c.source).join('\n\n');
+          // Gather all cells from that markdown cell up to activeCellIndex - 1
+          const startIdx = lastMdIdx !== -1 ? lastMdIdx : 0;
+          const contextCells = [];
+          for (let i = startIdx; i < activeCellIndex; i++) {
+            contextCells.push(notebook.widgets[i]);
+          }
+
+          let contextStr = '';
+          const markdownCellsForAttachment = [];
+
+          for (const cCell of contextCells) {
+            const cSource = cCell.model.sharedModel.source.trim();
+            if (!cSource) {
+              continue;
+            }
+
+            if (cCell.model.type === 'markdown') {
+              contextStr += `${cSource}\n\n`;
+              markdownCellsForAttachment.push({
+                id: cCell.model.id,
+                input_type: 'markdown' as const
+              });
+            } else if (cCell.model.type === 'code') {
+              contextStr += `Preceding Code:\n\`\`\`${language}\n${cSource}\n\`\`\`\n\n`;
+            }
+          }
+
+          studentContext = contextStr.trim();
+
+          if (markdownCellsForAttachment.length > 0) {
             attachment = {
               type: 'notebook',
               value: notebookPath,
-              cells: markdownCells.map(c => ({
-                id: c.id,
-                input_type: 'markdown' as const
-              }))
+              cells: markdownCellsForAttachment
             };
           }
+        }
+
+        // Format student answer
+        let studentAnswer = source;
+        if (jsonError) {
+          const traceback = jsonError.traceback
+            .map(line => line.replace(ANSI_ESCAPE, ''))
+            .join('\n');
+          studentAnswer += `\n\nError:\n${jsonError.ename}: ${jsonError.evalue}\n${traceback}`;
         }
 
         const question = errorSection
@@ -254,7 +287,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         await tutorModel.sendMessageToAI({
           body,
-          description,
+          studentContext,
+          studentAnswer,
           attachments: attachment ? [attachment] : undefined
         });
       },

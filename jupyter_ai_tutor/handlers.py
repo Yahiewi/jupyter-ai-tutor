@@ -9,16 +9,28 @@ class ExplainHandler(APIHandler):
     @tornado.web.authenticated
     async def post(self):
         body = self.get_json_body()
-        if not body or "body" not in body:
-            raise tornado.web.HTTPError(400, "Missing 'body' field in request")
+        if not body:
+            raise tornado.web.HTTPError(400, "Missing request body")
 
-        message_body = body["body"]
-        description = body.get("description", "")
-        if description:
-            message_body = (
-                f"<exercise_description>\n{description}\n</exercise_description>\n\n"
-                f"{message_body}"
-            )
+        student_context = body.get("student_context", "")
+        student_answer = body.get("student_answer", "")
+
+        if student_context or student_answer:
+            message_body = ""
+            if student_context:
+                message_body += f"<student_context>\n{student_context}\n</student_context>\n\n"
+            if student_answer:
+                message_body += f"<student_answer>\n{student_answer}\n</student_answer>\n\n"
+        else:
+            if "body" not in body:
+                raise tornado.web.HTTPError(400, "Missing 'body' field in request")
+            message_body = body["body"]
+            description = body.get("description", "")
+            if description:
+                message_body = (
+                    f"<exercise_description>\n{description}\n</exercise_description>\n\n"
+                    f"{message_body}"
+                )
 
         config_manager = self.settings.get("jupyternaut.config_manager")
         if not config_manager:
