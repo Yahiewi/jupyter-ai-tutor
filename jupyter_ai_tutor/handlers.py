@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import tornado
 from jupyter_server.base.handlers import APIHandler
@@ -36,6 +37,31 @@ class ExplainHandler(APIHandler):
         self.set_header("X-Accel-Buffering", "no")
 
         system_prompt = self.settings.get("jupyter_ai_tutor.system_prompt", "")
+        debug_mode = self.settings.get("jupyter_ai_tutor.debug", False)
+        prompt_file = None
+        answer_file = None
+        accumulated_response = ""
+
+        if debug_mode:
+            import os
+            debug_dir = "/tmp/jupyter-ai-tutor"
+            try:
+                os.makedirs(debug_dir, exist_ok=True)
+            except Exception as e:
+                self.log.error(f"Failed to create debug directory {debug_dir}: {e}")
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            prompt_file = f"{debug_dir}/{timestamp}_jupyter_tutor_prompt.txt"
+            answer_file = f"{debug_dir}/{timestamp}_jupyter_tutor_answer.txt"
+            try:
+                with open(prompt_file, "w", encoding="utf-8") as f:
+                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write(system_prompt)
+                    f.write("\n=====================\n\n")
+                    f.write("=== USER MESSAGE ===\n")
+                    f.write(message_body)
+                    f.write("\n====================\n")
+            except Exception as e:
+                self.log.error(f"Failed to write tutor debug prompt: {e}")
 
         try:
             from jupyter_ai_jupyternaut.jupyternaut.chat_models import ChatLiteLLM
@@ -63,10 +89,25 @@ class ExplainHandler(APIHandler):
                     )
                 )
                 if text:
+                    if debug_mode:
+                        accumulated_response += text
                     self.write(f"data: {json.dumps({'text': text})}\n\n")
                     self.flush()
 
+            if debug_mode and answer_file:
+                try:
+                    with open(answer_file, "w", encoding="utf-8") as f:
+                        f.write(accumulated_response)
+                except Exception as e:
+                    self.log.error(f"Failed to write tutor debug answer: {e}")
+
         except StreamClosedError:
+            if debug_mode and answer_file and accumulated_response:
+                try:
+                    with open(answer_file, "w", encoding="utf-8") as f:
+                        f.write(accumulated_response)
+                except Exception as e:
+                    pass
             return  # Client disconnected; stop streaming
         except Exception as e:
             self.log.exception("Error during tutor LLM call")
