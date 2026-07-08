@@ -44,7 +44,7 @@ class ExplainHandler(APIHandler):
 
         if debug_mode:
             import os
-            debug_dir = "/tmp/jupyter-ai-tutor"
+            debug_dir = Path(tempfile.gettempdir()) / "jupyter-ai-tutor"
             try:
                 os.makedirs(debug_dir, exist_ok=True)
             except Exception as e:
