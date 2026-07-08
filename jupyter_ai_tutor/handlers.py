@@ -58,7 +58,6 @@ class ExplainHandler(APIHandler):
                     f.write(system_prompt)
                     f.write("\n\n=== USER MESSAGE ===\n\n")
                     f.write(message_body)
-                    f.write("\n====================\n")
             except Exception as e:
                 self.log.error(f"Failed to write tutor debug prompt: {e}")
 
