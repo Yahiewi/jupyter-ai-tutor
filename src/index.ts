@@ -10,12 +10,13 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
-import { ICodeCellModel } from '@jupyterlab/cells';
+import { Cell, ICodeCellModel } from '@jupyterlab/cells';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { infoIcon } from '@jupyterlab/ui-components';
+import { Panel, Widget } from '@lumino/widgets';
 
 import { clearItem, stopItem } from './components';
 import { TUTOR_USER, TutorChatModel } from './model';
@@ -123,15 +124,83 @@ const plugin: JupyterFrontEndPlugin<void> = {
       attachmentOpenerRegistry,
       inputToolbarRegistry
     });
-    chatWidget.id = 'jupyter-ai-tutor-panel';
-    chatWidget.title.label = trans.__('Tutor');
-    chatWidget.title.caption = trans.__('Tutor');
-    chatWidget.title.closable = true;
-    app.shell.add(chatWidget, 'right');
+    chatWidget.id = 'jupyter-ai-tutor-chat';
 
-    // Keep the enabled state in sync when the active cell changes.
+    // Track cell currently being explained
+    let lastExplainedCellId: string | null = null;
+
+    // Create the warning banner element
+    const warningBanner = document.createElement('div');
+    warningBanner.className = 'jp-jupyter-ai-tutor-warning-banner';
+
+    const warningText = document.createElement('span');
+    warningText.className = 'jp-jupyter-ai-tutor-warning-text';
+    warningText.textContent = trans.__(
+      'Warning: You have moved away from the cell for which this feedback is generated.'
+    );
+    warningBanner.appendChild(warningText);
+
+    const warningButton = document.createElement('button');
+    warningButton.className = 'jp-jupyter-ai-tutor-warning-btn';
+    warningButton.textContent = trans.__('Go to Cell');
+    warningBanner.appendChild(warningButton);
+
+    // Create the warning banner widget wrapping the warningBanner node
+    const warningWidget = new Widget({ node: warningBanner });
+    warningWidget.id = 'jupyter-ai-tutor-warning-widget';
+
+    // Wrap the warning widget and chat widget in a main panel using Panel
+    const mainPanel = new Panel();
+    mainPanel.id = 'jupyter-ai-tutor-panel';
+    mainPanel.title.label = trans.__('Tutor');
+    mainPanel.title.caption = trans.__('Tutor');
+    mainPanel.title.closable = true;
+
+    // Add widgets to panel
+    mainPanel.addWidget(warningWidget);
+    mainPanel.addWidget(chatWidget);
+
+    warningWidget.hide();
+    app.shell.add(mainPanel, 'right');
+
+    // Handle "Go to Cell" click to scroll back to relevant cell
+    warningButton.addEventListener('click', () => {
+      if (!lastExplainedCellId || !notebookTracker) {
+        return;
+      }
+      const notebookPanel = notebookTracker.find((panel: NotebookPanel) =>
+        panel.content.widgets.some(
+          (widget: Cell) => widget.model.id === lastExplainedCellId
+        )
+      );
+      if (notebookPanel) {
+        app.shell.activateById(notebookPanel.id);
+        const index = notebookPanel.content.widgets.findIndex(
+          (widget: Cell) => widget.model.id === lastExplainedCellId
+        );
+        if (index !== -1) {
+          notebookPanel.content.activeCellIndex = index;
+          notebookPanel.content.widgets[index].node.scrollIntoView({
+            block: 'nearest'
+          });
+        }
+      }
+    });
+
     notebookTracker?.activeCellChanged.connect(() => {
       commands.notifyCommandChanged(CommandIDs.explainCode);
+
+      const activeCell = notebookTracker?.activeCell;
+
+      if (lastExplainedCellId && activeCell) {
+        if (activeCell.model.id !== lastExplainedCellId) {
+          warningWidget.show();
+        } else {
+          warningWidget.hide();
+        }
+      } else {
+        warningWidget.hide();
+      }
     });
 
     // Listen for writers change to display the stop button.
@@ -155,6 +224,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
         inputToolbarRegistry?.show('clear');
       } else {
         inputToolbarRegistry?.hide('clear');
+        lastExplainedCellId = null;
+        warningWidget.hide();
       }
     }
 
@@ -173,6 +244,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
       execute: async () => {
         const cell = notebookTracker?.activeCell;
         if (!cell || cell.model.type !== 'code') return;
+
+        lastExplainedCellId = cell.model.id;
+        warningWidget.hide();
 
         const source = cell.model.sharedModel.source.trim();
         if (!source) return;
@@ -247,10 +321,10 @@ const plugin: JupyterFrontEndPlugin<void> = {
           : 'Can you explain this code?';
         const body = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
 
-        if (!chatWidget.isAttached) {
-          app.shell.add(chatWidget, 'right');
+        if (!mainPanel.isAttached) {
+          app.shell.add(mainPanel, 'right');
         }
-        app.shell.activateById(chatWidget.id);
+        app.shell.activateById(mainPanel.id);
 
         await tutorModel.sendMessageToAI({
           body,
