@@ -56,8 +56,7 @@ class ExplainHandler(APIHandler):
                 with open(prompt_file, "w", encoding="utf-8") as f:
                     f.write("=== SYSTEM PROMPT ===\n\n")
                     f.write(system_prompt)
-                    f.write("\n=====================\n\n")
-                    f.write("=== USER MESSAGE ===\n")
+                    f.write("\n\n=== USER MESSAGE ===\n\n")
                     f.write(message_body)
                     f.write("\n====================\n")
             except Exception as e:
