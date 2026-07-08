@@ -54,7 +54,7 @@ class ExplainHandler(APIHandler):
             answer_file = f"{debug_dir}/{timestamp}_jupyter_tutor_answer.txt"
             try:
                 with open(prompt_file, "w", encoding="utf-8") as f:
-                    f.write("=== SYSTEM PROMPT ===\n")
+                    f.write("=== SYSTEM PROMPT ===\n\n")
                     f.write(system_prompt)
                     f.write("\n=====================\n\n")
                     f.write("=== USER MESSAGE ===\n")
