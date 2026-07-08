@@ -25,13 +25,6 @@ class JupyterAITutorApp(ExtensionApp):
         help="Whether to log prompts and replies to /tmp for debugging.",
     ).tag(config=True)
 
-    flags = {
-        "tutor-debug": (
-            {"JupyterAITutorApp": {"debug": True}},
-            "Log prompts and replies to /tmp for debugging.",
-        )
-    }
-
     def initialize_settings(self):
         path = Path(self.agent_md) if self.agent_md else _DEFAULT_AGENT_MD
         self.settings["jupyter_ai_tutor.system_prompt"] = path.read_text(
