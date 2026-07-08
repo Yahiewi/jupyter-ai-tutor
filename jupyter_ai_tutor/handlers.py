@@ -96,6 +96,7 @@ class ExplainHandler(APIHandler):
                 try:
                     with open(answer_file, "w", encoding="utf-8") as f:
                         f.write(accumulated_response)
+                        f.write("\n")
                 except Exception as e:
                     self.log.error(f"Failed to write tutor debug answer: {e}")
 
