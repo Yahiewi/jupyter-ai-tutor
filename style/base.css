@@ -20,53 +20,21 @@
   border-top: none;
 }
 
-/* Flex layout for sidebar panel and chat */
-/* stylelint-disable-next-line selector-class-pattern */
-#jupyter-ai-tutor-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-/* stylelint-disable-next-line selector-class-pattern */
-#jupyter-ai-tutor-chat {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Warning banner for focus transitions */
-/* stylelint-disable-next-line selector-class-pattern */
-.jp-jupyter-ai-tutor-warning-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background-color: var(--jp-warn-color3, #fffbeb);
-  border-bottom: 1px solid var(--jp-warn-color1, #f59e0b);
-  color: var(--jp-ui-font-color1, #78350f);
-  font-size: var(--jp-ui-font-size1, 13px);
-}
-
-/* stylelint-disable-next-line selector-class-pattern */
-.jp-jupyter-ai-tutor-warning-text {
-  flex: 1;
-  margin-right: 8px;
-}
-
-/* stylelint-disable-next-line selector-class-pattern */
-.jp-jupyter-ai-tutor-warning-btn {
-  background: var(--jp-brand-color1, #2196f3);
-  color: var(--jp-layout-color0, #ffffff);
-  border: none;
+/* Style Go to Cell links as standard buttons */
+#jupyter-ai-tutor-panel a[href^="#tutor-cell-"] {
+  display: inline-block;
+  background-color: var(--jp-brand-color1, #2196f3);
+  color: var(--jp-layout-color0, #ffffff) !important;
+  text-decoration: none;
   border-radius: 3px;
   padding: 4px 8px;
-  cursor: pointer;
   font-weight: 500;
   font-size: var(--jp-ui-font-size0, 11px);
   white-space: nowrap;
+  margin-top: 8px;
 }
 
-/* stylelint-disable-next-line selector-class-pattern */
-.jp-jupyter-ai-tutor-warning-btn:hover {
-  background: var(--jp-brand-color0, #1976d2);
+#jupyter-ai-tutor-panel a[href^="#tutor-cell-"]:hover {
+  background-color: var(--jp-brand-color0, #1976d2);
+  text-decoration: none;
 }
