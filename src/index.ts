@@ -19,7 +19,7 @@ import { infoIcon } from '@jupyterlab/ui-components';
 
 import { clearItem, stopItem } from './components';
 import { TUTOR_USER, TutorChatModel } from './model';
-import { isContinuous } from './utils';
+import { decodeRot13, formatEvaluationCriteria, isContinuous } from './utils';
 
 const INFO_ICON_BASE_64 = btoa(infoIcon.svgstr);
 
@@ -242,10 +242,31 @@ const plugin: JupyterFrontEndPlugin<void> = {
           }
         }
 
+        // Retrieve and decode reference_solution from metadata
+        const rawSolution = cell.model.getMetadata('reference_solution');
+        const referenceSolution =
+          typeof rawSolution === 'string' ? decodeRot13(rawSolution) : '';
+
+        // Retrieve and format evaluation_criteria from metadata
+        const rawCriteria = cell.model.getMetadata('evaluation_criteria');
+        const evaluationCriteria = formatEvaluationCriteria(rawCriteria);
+
         const question = errorSection
           ? 'Can you explain this code and the error it produced?'
           : 'Can you explain this code?';
-        const body = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+        const bodyContent = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+
+        let formattedBody = '';
+        if (description) {
+          formattedBody += `<exercise_description>\n${description}\n</exercise_description>\n\n`;
+        }
+        formattedBody += bodyContent;
+        if (referenceSolution) {
+          formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
+        }
+        if (evaluationCriteria) {
+          formattedBody += `\n\n<evaluation_criteria>\n${evaluationCriteria}\n</evaluation_criteria>`;
+        }
 
         if (!chatWidget.isAttached) {
           app.shell.add(chatWidget, 'right');
@@ -253,8 +274,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(chatWidget.id);
 
         await tutorModel.sendMessageToAI({
-          body,
-          description,
+          body: formattedBody,
           attachments: attachment ? [attachment] : undefined
         });
       },
