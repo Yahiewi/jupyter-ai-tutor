@@ -19,7 +19,7 @@ import { infoIcon } from '@jupyterlab/ui-components';
 
 import { clearItem, stopItem } from './components';
 import { TUTOR_USER, TutorChatModel } from './model';
-import { isContinuous } from './utils';
+import { decodeRot13, formatEvaluationCriteria, isContinuous } from './utils';
 
 const INFO_ICON_BASE_64 = btoa(infoIcon.svgstr);
 
@@ -183,6 +183,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         // Collect the first error output from the cell, if any.
         const codeModel = cell.model as ICodeCellModel;
         const outputs = codeModel.outputs;
+        let errorSection = '';
         let jsonError: {
           ename: string;
           evalue: string;
@@ -198,6 +199,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
               traceback: string[];
             };
             jsonError = json;
+            const traceback = json.traceback
+              .map(line => line.replace(ANSI_ESCAPE, ''))
+              .join('\n');
+            errorSection =
+              `\n\n**Error:**\n\`\`\`\n${json.ename}: ${json.evalue}\n` +
+              `${traceback}\n\`\`\``;
             break;
           }
         }
@@ -267,12 +274,33 @@ const plugin: JupyterFrontEndPlugin<void> = {
           studentAnswer += `\n\nError:\n${jsonError.ename}: ${jsonError.evalue}\n${traceback}`;
         }
 
+        // Retrieve and decode reference_solution from metadata
+        const rawSolution = cell.model.getMetadata('reference_solution');
+        const referenceSolution =
+          typeof rawSolution === 'string' ? decodeRot13(rawSolution) : '';
+
+        // Retrieve and format evaluation_criteria from metadata
+        const rawCriteria = cell.model.getMetadata('evaluation_criteria');
+        const evaluationCriteria = formatEvaluationCriteria(rawCriteria);
+
+        const question = errorSection
+          ? 'Can you explain this code and the error it produced?'
+          : 'Can you explain this code?';
+        const bodyContent = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+
         let formattedBody = '';
         if (studentContext) {
           formattedBody += `<student_context>\n${studentContext}\n</student_context>\n\n`;
         }
         if (studentAnswer) {
           formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>\n\n`;
+        }
+        formattedBody += bodyContent;
+        if (referenceSolution) {
+          formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
+        }
+        if (evaluationCriteria) {
+          formattedBody += `\n\n<evaluation_criteria>\n${evaluationCriteria}\n</evaluation_criteria>`;
         }
 
         if (!chatWidget.isAttached) {
