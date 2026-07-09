@@ -11,3 +11,29 @@ export function isContinuous(numbers: number[]): boolean {
 
   return true;
 }
+
+/**
+ * Decodes a ROT13 encoded string.
+ */
+export function decodeRot13(str: string): string {
+  return str.replace(/[a-zA-Z]/g, c => {
+    const base = c <= 'Z' ? 65 : 97;
+    return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+  });
+}
+
+export function formatEvaluationCriteria(criteriaData: unknown): string {
+  if (!criteriaData) {
+    return '';
+  }
+  if (typeof criteriaData === 'string') {
+    return criteriaData;
+  }
+  if (Array.isArray(criteriaData)) {
+    return criteriaData
+      .map(item => (typeof item === 'string' ? `- ${item.trim()}` : ''))
+      .filter(Boolean)
+      .join('\n');
+  }
+  return '';
+}

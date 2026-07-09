@@ -183,7 +183,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
         // Collect the first error output from the cell, if any.
         const codeModel = cell.model as ICodeCellModel;
         const outputs = codeModel.outputs;
-        let errorSection = '';
         let jsonError: {
           ename: string;
           evalue: string;
@@ -199,12 +198,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
               traceback: string[];
             };
             jsonError = json;
-            const traceback = json.traceback
-              .map(line => line.replace(ANSI_ESCAPE, ''))
-              .join('\n');
-            errorSection =
-              `\n\n**Error:**\n\`\`\`\n${json.ename}: ${json.evalue}\n` +
-              `${traceback}\n\`\`\``;
             break;
           }
         }
@@ -265,7 +258,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
             };
           }
         }
-
         // Format student answer
         let studentAnswer = source;
         if (jsonError) {
@@ -275,10 +267,13 @@ const plugin: JupyterFrontEndPlugin<void> = {
           studentAnswer += `\n\nError:\n${jsonError.ename}: ${jsonError.evalue}\n${traceback}`;
         }
 
-        const question = errorSection
-          ? 'Can you explain this code and the error it produced?'
-          : 'Can you explain this code?';
-        const body = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+        let formattedBody = '';
+        if (studentContext) {
+          formattedBody += `<student_context>\n${studentContext}\n</student_context>\n\n`;
+        }
+        if (studentAnswer) {
+          formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>\n\n`;
+        }
 
         if (!chatWidget.isAttached) {
           app.shell.add(chatWidget, 'right');
@@ -286,9 +281,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(chatWidget.id);
 
         await tutorModel.sendMessageToAI({
-          body,
-          studentContext,
-          studentAnswer,
+          body: formattedBody,
+          notebookPath,
           attachments: attachment ? [attachment] : undefined
         });
       },
