@@ -85,7 +85,7 @@ class ExplainHandler(APIHandler):
                     if debug_mode:
                         accumulated_response += text
                     self.write(f"data: {json.dumps({'text': text})}\n\n")
-                    self.flush()
+                    await self.flush()
 
             if debug_mode and answer_file:
                 try:
@@ -108,13 +108,13 @@ class ExplainHandler(APIHandler):
             self.log.exception("Error during tutor LLM call")
             try:
                 self.write(f"data: {json.dumps({'error': str(e)})}\n\n")
-                self.flush()
+                await self.flush()
             except StreamClosedError:
                 return
 
         try:
             self.write("data: [DONE]\n\n")
-            self.flush()
+            await self.flush()
             self.finish()
         except StreamClosedError:
             pass
