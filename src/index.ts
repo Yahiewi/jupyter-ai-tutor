@@ -248,15 +248,25 @@ const plugin: JupyterFrontEndPlugin<void> = {
           typeof rawSolution === 'string' ? decodeRot13(rawSolution) : '';
 
         // Retrieve and format evaluation_criteria from metadata
-        const rawCriteria =
-          cell.model.getMetadata('evaluation_criteria') ||
-          cell.model.getMetadata('criteria');
+        const rawCriteria = cell.model.getMetadata('evaluation_criteria');
         const evaluationCriteria = formatEvaluationCriteria(rawCriteria);
 
         const question = errorSection
           ? 'Can you explain this code and the error it produced?'
           : 'Can you explain this code?';
-        const body = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+        const bodyContent = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+
+        let formattedBody = '';
+        if (description) {
+          formattedBody += `<exercise_description>\n${description}\n</exercise_description>\n\n`;
+        }
+        formattedBody += bodyContent;
+        if (referenceSolution) {
+          formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
+        }
+        if (evaluationCriteria) {
+          formattedBody += `\n\n<evaluation_criteria>\n${evaluationCriteria}\n</evaluation_criteria>`;
+        }
 
         if (!chatWidget.isAttached) {
           app.shell.add(chatWidget, 'right');
@@ -264,10 +274,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(chatWidget.id);
 
         await tutorModel.sendMessageToAI({
-          body,
-          description,
-          referenceSolution,
-          evaluationCriteria,
+          body: formattedBody,
           attachments: attachment ? [attachment] : undefined
         });
       },

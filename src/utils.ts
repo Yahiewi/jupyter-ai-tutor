@@ -12,14 +12,6 @@ export function isContinuous(numbers: number[]): boolean {
   return true;
 }
 
-export interface ICriteriaItem {
-  label?: string;
-  title?: string;
-  name?: string;
-  description?: string;
-  desc?: string;
-}
-
 /**
  * Decodes a ROT13 encoded string.
  */
@@ -37,19 +29,11 @@ export function formatEvaluationCriteria(criteriaData: unknown): string {
   if (typeof criteriaData === 'string') {
     return criteriaData;
   }
-
-  const data = criteriaData as { criteria?: ICriteriaItem[] } | ICriteriaItem[];
-  const list = Array.isArray(data) ? data : data.criteria || [];
-
-  return list
-    .map(item => {
-      if (item && typeof item === 'object') {
-        const label = item.label || item.title || item.name || '';
-        const desc = item.description || item.desc || '';
-        return label && desc ? `- ${label}: ${desc}` : `- ${label || desc}`;
-      }
-      return typeof item === 'string' ? `- ${item}` : '';
-    })
-    .filter(Boolean)
-    .join('\n');
+  if (Array.isArray(criteriaData)) {
+    return criteriaData
+      .map(item => (typeof item === 'string' ? `- ${item.trim()}` : ''))
+      .filter(Boolean)
+      .join('\n');
+  }
+  return '';
 }

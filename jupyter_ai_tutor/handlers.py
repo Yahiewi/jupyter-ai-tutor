@@ -9,26 +9,16 @@ class ExplainHandler(APIHandler):
     @tornado.web.authenticated
     async def post(self):
         body = self.get_json_body()
-        if not body:
-            raise tornado.web.HTTPError(400, "Missing request body")
+        if not body or "body" not in body:
+            raise tornado.web.HTTPError(400, "Missing 'body' field in request")
 
-        message_body = body.get("body", "")
+        message_body = body["body"]
         description = body.get("description", "")
-        reference_solution = body.get("reference_solution", "")
-        evaluation_criteria = body.get("evaluation_criteria", "")
-
-        formatted_message = ""
         if description:
-            formatted_message += f"<exercise_description>\n{description}\n</exercise_description>\n\n"
-
-        formatted_message += f"{message_body}"
-
-        if reference_solution:
-            formatted_message += f"\n\n<reference_solution>\n{reference_solution}\n</reference_solution>"
-        if evaluation_criteria:
-            formatted_message += f"\n\n<evaluation_criteria>\n{evaluation_criteria}\n</evaluation_criteria>"
-
-        message_body = formatted_message.strip()
+            message_body = (
+                f"<exercise_description>\n{description}\n</exercise_description>\n\n"
+                f"{message_body}"
+            )
 
         config_manager = self.settings.get("jupyternaut.config_manager")
         if not config_manager:
