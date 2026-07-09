@@ -309,7 +309,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(chatWidget.id);
 
         await tutorModel.sendMessageToAI({
-          body: formattedBody,
+          body: bodyContent,
+          formattedBody: formattedBody,
           notebookPath,
           attachments: attachment ? [attachment] : undefined
         });
