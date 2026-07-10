@@ -286,15 +286,15 @@ const plugin: JupyterFrontEndPlugin<void> = {
         const evaluationCriteria = formatEvaluationCriteria(rawCriteria);
 
         const question = errorSection
-          ? 'Can you explain this code and the error it produced?'
-          : 'Can you explain this code?';
+          ? 'Explain code and error'
+          : 'Explain code?';
         const bodyContent = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
 
         let formattedBody = '';
         if (studentContext) {
-          formattedBody += `<student_context>\n${studentContext}\n</student_context>\n\n`;
+          formattedBody += `<context>\n${studentContext}\n</context>\n\n`;
         }
-        formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>`;
+        formattedBody += `<source>\n${studentAnswer}\n</source>`;
 
         if (referenceSolution) {
           formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
