@@ -217,25 +217,19 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         if (notebook) {
           const activeCellIndex = notebook.activeCellIndex;
-          let startIdx = activeCellIndex;
-          let hasSeenMarkdown = false;
+          let lastMdIdx = -1;
 
-          // Traverse backwards to find the start of the exercise context
+          // Find the index of the most recent markdown cell above the active cell
           for (let i = activeCellIndex - 1; i >= 0; i--) {
             const precedingCell = notebook.widgets[i];
             if (precedingCell.model.type === 'markdown') {
-              // We found an exercise description cell
-              hasSeenMarkdown = true;
-              startIdx = i;
-            } else if (precedingCell.model.type === 'code') {
-              // Stop if we hit a code cell before the exercise instructions (markdown)
-              if (hasSeenMarkdown) {
-                break;
-              }
-              // Code cells below the instructions are part of the exercise
-              startIdx = i;
+              lastMdIdx = i;
+              break;
             }
           }
+
+          // Gather all cells from that markdown cell up to activeCellIndex - 1
+          const startIdx = lastMdIdx !== -1 ? lastMdIdx : 0;
 
           const contextCells = [];
           for (let i = startIdx; i < activeCellIndex; i++) {
@@ -251,18 +245,15 @@ const plugin: JupyterFrontEndPlugin<void> = {
               continue;
             }
 
+            cellsForAttachment.push({
+              id: cCell.model.id,
+              input_type: cCell.model.type as 'raw' | 'markdown' | 'code'
+            });
+
             if (cCell.model.type === 'markdown') {
               contextStr += `${cSource}\n\n`;
-              cellsForAttachment.push({
-                id: cCell.model.id,
-                input_type: 'markdown' as const
-              });
             } else if (cCell.model.type === 'code') {
               contextStr += `Preceding Code:\n\`\`\`${language}\n${cSource}\n\`\`\`\n\n`;
-              cellsForAttachment.push({
-                id: cCell.model.id,
-                input_type: 'code' as const
-              });
             }
           }
 
