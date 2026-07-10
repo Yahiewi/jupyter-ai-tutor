@@ -238,10 +238,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           }
 
           const contextCells = [];
-          if (hasSeenMarkdown) {
-            for (let i = startIdx; i < activeCellIndex; i++) {
-              contextCells.push(notebook.widgets[i]);
-            }
+          for (let i = startIdx; i < activeCellIndex; i++) {
+            contextCells.push(notebook.widgets[i]);
           }
 
           let contextStr = '';
@@ -305,15 +303,16 @@ const plugin: JupyterFrontEndPlugin<void> = {
         if (studentContext) {
           formattedBody += `<student_context>\n${studentContext}\n</student_context>\n\n`;
         }
-        if (studentAnswer) {
-          formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>`;
-        }
+        formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>`;
+
         if (referenceSolution) {
           formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
         }
         if (evaluationCriteria) {
           formattedBody += `\n\n<evaluation_criteria>\n${evaluationCriteria}\n</evaluation_criteria>`;
         }
+
+        formattedBody += '\n';
 
         if (!chatWidget.isAttached) {
           app.shell.add(chatWidget, 'right');
