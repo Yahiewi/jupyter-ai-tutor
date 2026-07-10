@@ -19,7 +19,7 @@ import { infoIcon } from '@jupyterlab/ui-components';
 
 import { clearItem, stopItem } from './components';
 import { TUTOR_USER, TutorChatModel } from './model';
-import { isContinuous } from './utils';
+import { decodeSolution, isContinuous } from './utils';
 
 const INFO_ICON_BASE_64 = btoa(infoIcon.svgstr);
 
@@ -214,6 +214,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
         const codeModel = cell.model as ICodeCellModel;
         const outputs = codeModel.outputs;
         let errorSection = '';
+        let jsonError: {
+          ename: string;
+          evalue: string;
+          traceback: string[];
+        } | null = null;
 
         for (let i = 0; i < outputs.length; i++) {
           const output = outputs.get(i);
@@ -223,6 +228,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
               evalue: string;
               traceback: string[];
             };
+            jsonError = json;
             const traceback = json.traceback
               .map(line => line.replace(ANSI_ESCAPE, ''))
               .join('\n');
@@ -233,49 +239,102 @@ const plugin: JupyterFrontEndPlugin<void> = {
           }
         }
 
-        // Collect preceding markdown cells as exercise description context.
+        // Collect preceding cells context.
         const notebook = notebookTracker?.currentWidget?.content;
         const notebookPath = notebookTracker?.currentWidget?.context.path ?? '';
-        let description: string | undefined;
+        let studentContext = '';
         let attachment: INotebookAttachment | undefined;
 
         if (notebook) {
           const activeCellIndex = notebook.activeCellIndex;
-          const markdownCells: { id: string; source: string }[] = [];
+          let lastMdIdx = -1;
 
+          // Find the index of the most recent markdown cell above the active cell
           for (let i = activeCellIndex - 1; i >= 0; i--) {
             const precedingCell = notebook.widgets[i];
-            if (precedingCell.model.type === 'code') {
-              break;
-            }
             if (precedingCell.model.type === 'markdown') {
-              const mdSource = precedingCell.model.sharedModel.source.trim();
-              if (mdSource) {
-                markdownCells.unshift({
-                  id: precedingCell.model.id,
-                  source: mdSource
-                });
-              }
+              lastMdIdx = i;
+              break;
             }
           }
 
-          if (markdownCells.length > 0) {
-            description = markdownCells.map(c => c.source).join('\n\n');
+          // Gather all cells from that markdown cell up to activeCellIndex - 1
+          const startIdx = lastMdIdx !== -1 ? lastMdIdx : 0;
+
+          const contextCells = [];
+          for (let i = startIdx; i < activeCellIndex; i++) {
+            contextCells.push(notebook.widgets[i]);
+          }
+
+          let contextStr = '';
+          const cellsForAttachment = [];
+
+          for (const cCell of contextCells) {
+            const cSource = cCell.model.sharedModel.source.trim();
+            if (!cSource) {
+              continue;
+            }
+
+            cellsForAttachment.push({
+              id: cCell.model.id,
+              input_type: cCell.model.type as 'raw' | 'markdown' | 'code'
+            });
+
+            if (cCell.model.type === 'markdown') {
+              contextStr += `${cSource}\n\n`;
+            } else if (cCell.model.type === 'code') {
+              contextStr += `Preceding Code:\n\`\`\`${language}\n${cSource}\n\`\`\`\n\n`;
+            }
+          }
+
+          studentContext = contextStr.trim();
+
+          if (cellsForAttachment.length > 0) {
             attachment = {
               type: 'notebook',
               value: notebookPath,
-              cells: markdownCells.map(c => ({
-                id: c.id,
-                input_type: 'markdown' as const
-              }))
+              cells: cellsForAttachment
             };
           }
         }
+        // Format student answer
+        let studentAnswer = source;
+        if (jsonError) {
+          const traceback = jsonError.traceback
+            .map(line => line.replace(ANSI_ESCAPE, ''))
+            .join('\n');
+          studentAnswer += `\n\nError:\n${jsonError.ename}: ${jsonError.evalue}\n${traceback}`;
+        }
+
+        // Retrieve and decode reference_solution from metadata
+        const rawSolution = cell.model.getMetadata('reference_solution');
+        const referenceSolution =
+          typeof rawSolution === 'string' ? decodeSolution(rawSolution) : '';
+
+        // Retrieve evaluation_criteria from metadata
+        const evaluationCriteria = cell.model.getMetadata(
+          'evaluation_criteria'
+        );
 
         const question = errorSection
-          ? 'Can you explain this code and the error it produced?'
-          : 'Can you explain this code?';
-        const body = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+          ? 'Explain code and error'
+          : 'Explain code';
+        const bodyContent = `${question}\n\n\`\`\`${language}\n${source}\n\`\`\`${errorSection}\n`;
+
+        let formattedBody = '';
+        if (studentContext) {
+          formattedBody += `<context>\n${studentContext}\n</context>\n\n`;
+        }
+        formattedBody += `<source>\n${studentAnswer}\n</source>`;
+
+        if (referenceSolution) {
+          formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
+        }
+        if (evaluationCriteria && typeof evaluationCriteria === 'string') {
+          formattedBody += `\n\n<evaluation_criteria>\n${evaluationCriteria}\n</evaluation_criteria>`;
+        }
+
+        formattedBody += '\n';
 
         if (!chatWidget.isAttached) {
           app.shell.add(chatWidget, 'right');
@@ -283,8 +342,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(chatWidget.id);
 
         await tutorModel.sendMessageToAI({
-          body,
-          description,
+          body: bodyContent,
+          formattedBody: formattedBody,
+          notebookPath,
           cellId: cell.model.id,
           attachments: attachment ? [attachment] : undefined
         });

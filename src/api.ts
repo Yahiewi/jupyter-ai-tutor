@@ -5,11 +5,12 @@ import { ServerConnection } from '@jupyterlab/services';
  * Streams the tutor explanation for the given message body via SSE.
  * Yields text chunks as they arrive from the backend.
  * @param body - The user message (code + question)
- * @param description - Optional exercise description from preceding markdown cells
+ * @param notebookPath - Path of the active notebook relative to the server root
+ * @param signal - Optional abort signal
  */
 export async function* streamExplanation(
   body: string,
-  description?: string,
+  notebookPath?: string,
   signal?: AbortSignal
 ): AsyncGenerator<string, void, undefined> {
   const settings = ServerConnection.makeSettings();
@@ -19,7 +20,7 @@ export async function* streamExplanation(
     url,
     {
       method: 'POST',
-      body: JSON.stringify({ body, description }),
+      body: JSON.stringify({ body, notebookPath }),
       headers: { 'Content-Type': 'application/json' },
       signal
     },

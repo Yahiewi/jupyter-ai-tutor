@@ -38,3 +38,17 @@
   background-color: var(--jp-brand-color0, #1976d2);
   text-decoration: none;
 }
+
+/* Override toolbar visibility on cell overlap */
+/* stylelint-disable-next-line selector-class-pattern */
+.jp-toolbar-overlap .jp-cell-toolbar {
+  display: flex !important;
+  opacity: 0.15;
+}
+
+/* stylelint-disable-next-line selector-class-pattern */
+.jp-toolbar-overlap .jp-cell-toolbar:hover {
+  opacity: 1 !important;
+  background-color: var(--jp-layout-color1);
+  box-shadow: var(--jp-elevation-z2);
+}
