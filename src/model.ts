@@ -14,6 +14,8 @@ import { AI_AVATAR } from './icons';
 
 interface ITutorNewMessage extends INewMessage {
   attachments?: IAttachment[];
+  notebookPath?: string;
+  formattedBody?: string;
 }
 
 export const TUTOR_USER: IUser = {
@@ -87,7 +89,8 @@ export class TutorChatModel extends AbstractChatModel {
     try {
       let accumulated = '';
       for await (const chunk of streamExplanation(
-        message.body,
+        message.formattedBody ?? message.body,
+        message.notebookPath,
         this._abortController.signal
       )) {
         accumulated += chunk;
