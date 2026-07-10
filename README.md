@@ -11,7 +11,46 @@ It currently relies on [jupyter-ai-jupyternaut](https://github.com/jupyter-ai-co
 
 Once Jupyterlab started, the model must be configured via the menu `Settings>Jupyternaut settings` (model and API key).
 
-See Jupyternaut [documentation](https://jupyter-ai.readthedocs.io/en/v3/users/jupyternaut/index.html#model-selection) to set it up.
+See Jupyternaut [documentation](https://jupyter-ai.readthedocs.io/en/v3/users/jupyternaut/index.html#model-selection) for details about setting up the agent.
+
+## How it works
+
+Each code cell in a notebook gets an **Explain Code** button in its toolbar ![info icon](./info.png) \
+Clicking it opens a chat panel on the right side and sends the following context to the AI:
+
+- The **cell source code** and its **kernel language**
+- Any **error output** produced by the cell (traceback included)
+- **Preceding code cells and markdown cell** (up to the previous markdown cell), used as the exercise description
+- An optional **reference solution** and **evaluation criteria** stored in the cell metadata (the solution is ROT13-encoded to keep it hidden from students)
+
+The AI replies using a configurable **system prompt** (`TUTOR.md`) that shapes its pedagogical behavior. By default the extension looks for a `TUTOR.md` file walking up from the notebook's directory to the server root, so different courses or folders can each have their own tutor persona.
+
+## Configuration
+
+### TUTOR
+
+The extension can be configured via `jupyter_server_config.py` (or any traitlets CLI config):
+
+```python
+c.JupyterAITutorApp.discover_tutor_md = True   # default
+c.JupyterAITutorApp.tutor_md = ""              # default (uses built-in TUTOR.md)
+c.JupyterAITutorApp.debug = False              # default
+```
+
+| Parameter           | Type | Default | Description                                                                                                                                                                                                          |
+| ------------------- | ---- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `discover_tutor_md` | bool | `True`  | When enabled, the extension searches for a `TUTOR.md` file starting from the active notebook's directory and walking up to the server root. The first file found takes precedence over the configured system prompt. |
+| `tutor_md`          | str  | `""`    | Path to a Markdown file used as the system prompt. When empty, falls back to the built-in `TUTOR.md` shipped with the extension.                                                                                     |
+| `debug`             | bool | `False` | When enabled, prompts and model replies are logged to `jupyter-ai-tutor` temp directory for debugging purposes.                                                                                                      |
+
+### Jupyternaut
+
+The default model and API key used with Jupyternaut agent can be setup via `jupyter_server_config.py` (or any traitlets CLI config):
+
+```python
+c.AiExtension.initial_language_model=mistral/devstral-latest
+c.AiExtension.default_api_keys={'MISTRAL_API_KEY': '***'}
+```
 
 ## Requirements
 
