@@ -13,8 +13,6 @@ Once Jupyterlab started, the model must be configured via the menu `Settings>Jup
 
 See Jupyternaut [documentation](https://jupyter-ai.readthedocs.io/en/v3/users/jupyternaut/index.html#model-selection) to set it up.
 
-
-
 ## Requirements
 
 - JupyterLab >= 4.0.0
