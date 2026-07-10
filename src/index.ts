@@ -217,26 +217,35 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         if (notebook) {
           const activeCellIndex = notebook.activeCellIndex;
-          let lastMdIdx = -1;
+          let startIdx = activeCellIndex;
+          let hasSeenMarkdown = false;
 
-          // Find the index of the most recent markdown cell above the active cell
+          // Traverse backwards to find the start of the exercise context
           for (let i = activeCellIndex - 1; i >= 0; i--) {
             const precedingCell = notebook.widgets[i];
             if (precedingCell.model.type === 'markdown') {
-              lastMdIdx = i;
-              break;
+              // We found an exercise description cell
+              hasSeenMarkdown = true;
+              startIdx = i;
+            } else if (precedingCell.model.type === 'code') {
+              // Stop if we hit a code cell before the exercise instructions (markdown)
+              if (hasSeenMarkdown) {
+                break;
+              }
+              // Code cells below the instructions are part of the exercise
+              startIdx = i;
             }
           }
 
-          // Gather all cells from that markdown cell up to activeCellIndex - 1
-          const startIdx = lastMdIdx !== -1 ? lastMdIdx : 0;
           const contextCells = [];
-          for (let i = startIdx; i < activeCellIndex; i++) {
-            contextCells.push(notebook.widgets[i]);
+          if (hasSeenMarkdown) {
+            for (let i = startIdx; i < activeCellIndex; i++) {
+              contextCells.push(notebook.widgets[i]);
+            }
           }
 
           let contextStr = '';
-          const markdownCellsForAttachment = [];
+          const cellsForAttachment = [];
 
           for (const cCell of contextCells) {
             const cSource = cCell.model.sharedModel.source.trim();
@@ -246,22 +255,26 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
             if (cCell.model.type === 'markdown') {
               contextStr += `${cSource}\n\n`;
-              markdownCellsForAttachment.push({
+              cellsForAttachment.push({
                 id: cCell.model.id,
                 input_type: 'markdown' as const
               });
             } else if (cCell.model.type === 'code') {
               contextStr += `Preceding Code:\n\`\`\`${language}\n${cSource}\n\`\`\`\n\n`;
+              cellsForAttachment.push({
+                id: cCell.model.id,
+                input_type: 'code' as const
+              });
             }
           }
 
           studentContext = contextStr.trim();
 
-          if (markdownCellsForAttachment.length > 0) {
+          if (cellsForAttachment.length > 0) {
             attachment = {
               type: 'notebook',
               value: notebookPath,
-              cells: markdownCellsForAttachment
+              cells: cellsForAttachment
             };
           }
         }
@@ -293,9 +306,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           formattedBody += `<student_context>\n${studentContext}\n</student_context>\n\n`;
         }
         if (studentAnswer) {
-          formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>\n\n`;
+          formattedBody += `<student_answer>\n${studentAnswer}\n</student_answer>`;
         }
-        formattedBody += bodyContent;
         if (referenceSolution) {
           formattedBody += `\n\n<reference_solution>\n${referenceSolution}\n</reference_solution>`;
         }
