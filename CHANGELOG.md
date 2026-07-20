@@ -2,6 +2,43 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.2.0
+
+([Full Changelog](https://github.com/QuantStack/jupyter-ai-tutor/compare/v0.1.2...8bbca61ffdf2e3aac82ab43fa4f6c9ce5d312978))
+
+### Enhancements made
+
+- change cell toolbar opacity on text overlap [#20](https://github.com/QuantStack/jupyter-ai-tutor/pull/20) ([@Yahiewi](https://github.com/Yahiewi), [@brichet](https://github.com/brichet))
+- Look for TUTOR.md file from notebook directory to jupyter root directory [#17](https://github.com/QuantStack/jupyter-ai-tutor/pull/17) ([@brichet](https://github.com/brichet))
+- Parse reference solutions and evaluation criteria [#16](https://github.com/QuantStack/jupyter-ai-tutor/pull/16) ([@Yahiewi](https://github.com/Yahiewi), [@brichet](https://github.com/brichet))
+- Improve context collection [#15](https://github.com/QuantStack/jupyter-ai-tutor/pull/15) ([@Yahiewi](https://github.com/Yahiewi), [@brichet](https://github.com/brichet))
+
+### Bugs fixed
+
+- Fix debug output [#22](https://github.com/QuantStack/jupyter-ai-tutor/pull/22) ([@Yahiewi](https://github.com/Yahiewi), [@brichet](https://github.com/brichet))
+
+### Maintenance and upkeep improvements
+
+- Print the model used in the debug files [#26](https://github.com/QuantStack/jupyter-ai-tutor/pull/26) ([@brichet](https://github.com/brichet), [@Yahiewi](https://github.com/Yahiewi))
+- Use plain text for reference solution (no ROT13) [#25](https://github.com/QuantStack/jupyter-ai-tutor/pull/25) ([@brichet](https://github.com/brichet), [@Yahiewi](https://github.com/Yahiewi))
+- Use a multilines string as evalution criteria [#24](https://github.com/QuantStack/jupyter-ai-tutor/pull/24) ([@brichet](https://github.com/brichet), [@Yahiewi](https://github.com/Yahiewi))
+- Implement debug mode [#14](https://github.com/QuantStack/jupyter-ai-tutor/pull/14) ([@Yahiewi](https://github.com/Yahiewi), [@brichet](https://github.com/brichet))
+
+### Documentation improvements
+
+- Documentation [#23](https://github.com/QuantStack/jupyter-ai-tutor/pull/23) ([@brichet](https://github.com/brichet))
+
+### Contributors to this release
+
+The following people contributed discussions, new ideas, code and documentation contributions, and review.
+See [our definition of contributors](https://github-activity.readthedocs.io/en/latest/use/#how-does-this-tool-define-contributions-in-the-reports).
+
+([GitHub contributors page for this release](https://github.com/QuantStack/jupyter-ai-tutor/graphs/contributors?from=2026-06-17&to=2026-07-10&type=c))
+
+@brichet ([activity](https://github.com/search?q=repo%3AQuantStack%2Fjupyter-ai-tutor+involves%3Abrichet+updated%3A2026-06-17..2026-07-10&type=Issues)) | @Yahiewi ([activity](https://github.com/search?q=repo%3AQuantStack%2Fjupyter-ai-tutor+involves%3AYahiewi+updated%3A2026-06-17..2026-07-10&type=Issues))
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.1.2
 
 ([Full Changelog](https://github.com/QuantStack/jupyter-ai-tutor/compare/v0.1.1...151c93f50263777a5f3bdae607b6a716165ba962))
@@ -19,8 +56,6 @@ See [our definition of contributors](https://github-activity.readthedocs.io/en/l
 ([GitHub contributors page for this release](https://github.com/QuantStack/jupyter-ai-tutor/graphs/contributors?from=2026-06-16&to=2026-06-17&type=c))
 
 @brichet ([activity](https://github.com/search?q=repo%3AQuantStack%2Fjupyter-ai-tutor+involves%3Abrichet+updated%3A2026-06-16..2026-06-17&type=Issues))
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.1.1
 
