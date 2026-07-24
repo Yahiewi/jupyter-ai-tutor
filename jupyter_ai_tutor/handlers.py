@@ -51,7 +51,9 @@ class ExplainHandler(APIHandler):
                 "jupyter_ai_tutor.default_system_prompt", ""
             )
 
-        system_prompt = self._filter_prompt_for_action(raw_system_prompt, action)
+        system_prompt = self._render_prompt_template(
+            raw_system_prompt, action, notebook_path, body
+        )
 
         debug_mode = self.settings.get("jupyter_ai_tutor.debug", False)
         prompt_file = None
@@ -140,32 +142,22 @@ class ExplainHandler(APIHandler):
         except StreamClosedError:
             pass
 
-    def _filter_prompt_for_action(self, raw_prompt: str, action: str) -> str:
-        """Filters system prompt sections based on action ('explain' vs 'review')."""
-        lines = raw_prompt.splitlines()
-        filtered_lines = []
-        current_mode = "common"
-        target_header = f"## Mode: {action.capitalize()}"
-        other_headers = [
-            "## Mode: Explain",
-            "## Mode: Review",
-        ]
+    def _render_prompt_template(
+        self, raw_prompt: str, action: str, notebook_path: str, body: dict
+    ) -> str:
+        """Renders the system prompt using Jinja2 template rendering."""
+        try:
+            from jinja2 import Template
 
-        for line in lines:
-            stripped = line.strip()
-            if stripped in other_headers:
-                if stripped == target_header:
-                    current_mode = "include"
-                else:
-                    current_mode = "exclude"
-                    continue
-            elif stripped.startswith("## ") and current_mode != "common":
-                current_mode = "common"
-
-            if current_mode != "exclude":
-                filtered_lines.append(line)
-
-        return "\n".join(filtered_lines).strip()
+            template = Template(raw_prompt)
+            return template.render(
+                action=action,
+                notebook_path=notebook_path,
+                **body,
+            ).strip()
+        except Exception as e:
+            self.log.error(f"jupyter_ai_tutor: Jinja template rendering error: {e}")
+            return raw_prompt.strip()
 
     def _find_tutor_md(self, notebook_path: str, server_root: str) -> str | None:
         """Walk up the directory tree from the notebook's directory toward the
