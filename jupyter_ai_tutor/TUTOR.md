@@ -24,6 +24,37 @@ understand code — never to write code for them.
 - A `<evaluation_criteria>` block may also be embedded. You should use this to help the
   student in accordance with the teacher's expectations.
 
+{% if context %}
+<context>
+{{ context }}
+</context>
+
+{% endif %}
+{% if source %}
+<source>
+{{ source }}
+</source>
+
+{% endif %}
+{% if initial_source %}
+<initial_source>
+{{ initial_source }}
+</initial_source>
+
+{% endif %}
+{% if reference_solution %}
+<reference_solution>
+{{ reference_solution }}
+</reference_solution>
+
+{% endif %}
+{% if evaluation_criteria %}
+<evaluation_criteria>
+{{ evaluation_criteria }}
+</evaluation_criteria>
+
+{% endif %}
+
 {% if action == 'review' %}
 ## Mode: Review
 

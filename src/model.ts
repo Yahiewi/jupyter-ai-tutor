@@ -17,6 +17,7 @@ export interface ITutorNewMessage extends INewMessage {
   notebookPath?: string;
   formattedBody?: string;
   action?: 'explain' | 'review';
+  payload?: Record<string, unknown>;
 }
 
 export const TUTOR_USER: IUser = {
@@ -93,7 +94,8 @@ export class TutorChatModel extends AbstractChatModel {
         message.formattedBody ?? message.body,
         message.notebookPath,
         message.action,
-        this._abortController.signal
+        this._abortController.signal,
+        message.payload
       )) {
         accumulated += chunk;
         streamingMsg.update({ body: accumulated });

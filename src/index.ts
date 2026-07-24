@@ -316,6 +316,15 @@ const plugin: JupyterFrontEndPlugin<void> = {
         formattedBody: formattedBody,
         notebookPath,
         action,
+        payload: {
+          source: studentAnswer,
+          context: studentContext,
+          initial_source:
+            typeof initialSource === 'string' ? initialSource : '',
+          reference_solution: referenceSolution,
+          evaluation_criteria:
+            typeof evaluationCriteria === 'string' ? evaluationCriteria : ''
+        },
         attachments: attachment ? [attachment] : undefined
       });
     }
